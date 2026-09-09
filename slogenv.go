@@ -1,12 +1,13 @@
-// Package logging configures [log/slog] from the environment: a level, an encoding,
-// a timestamp layout and an optional log file.
+// Package slogenv configures [log/slog] from the environment vars.
 //
 // Text output goes through github.com/lmittmann/tint, which colorizes the level and
 // an http-style "status" attr when the destination is a terminal.
 //
+// JSON output is the stdlib [slog.JSONHandler]. Verbose and simple.
+//
 // [NewHandler] builds a handler and touches no global state. [Setup] is the same thing
-// installed with [slog.SetDefault], which is what a main usually wants.
-package logging
+// installed with [slog.SetDefault].
+package slogenv
 
 import (
 	"fmt"

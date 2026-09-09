@@ -1,41 +1,50 @@
 # slogenv
 
-Slog setup I use across projects.
+[![CI](https://github.com/salandered/slogenv/actions/workflows/ci.yml/badge.svg)](https://github.com/salandered/slogenv/actions/workflows/ci.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/salandered/slogenv.svg)](https://pkg.go.dev/github.com/salandered/slogenv)
+[![codecov](https://codecov.io/gh/salandered/slogenv/branch/main/graph/badge.svg)](https://codecov.io/gh/salandered/slogenv)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/salandered/slogenv)](go.mod)
+[![Latest tag](https://img.shields.io/github/v/tag/salandered/slogenv?sort=semver&label=release)](https://github.com/salandered/slogenv/tags)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Text output goes through [tint](https://github.com/lmittmann/tint), the only non-stdlib dependency.
+Slog setup.
+
+Text output goes through [tint](https://github.com/lmittmann/tint).
+
+JSON output is the stdlib [slog.JSONHandler](https://pkg.go.dev/log/slog#JSONHandler). Verbose and simple.
+
+## Compatibility
+
+No backward compatibility between versions.
 
 ## Usage
 
+`Setup` installs the default logger with `slog.SetDefault` and echoes the resolved config at Info.
+
 ```go
-cfg, err := logging.ConfigFromEnv()
+cfg, err := slogenv.ConfigFromEnv()
 if err != nil {
 	return err
 }
-closer, err := logging.Setup(cfg, requestid.LogAttrs)
+closer, err := slogenv.Setup(cfg, requestid.LogAttrs)
 if err != nil {
 	return err
 }
 defer func() { _ = closer.Close() }()
 ```
 
-`Setup` installs the default logger with `slog.SetDefault` and echoes the resolved config at Info.
 `NewHandler` is the same construction without the global write, for a caller that wants its own
 `*slog.Logger`:
 
 ```go
-h, closer, err := logging.NewHandler(cfg, nil)
+h, closer, err := slogenv.NewHandler(cfg, nil)
 ```
 
 The returned `io.Closer` closes the log file. A no-op in case of stdout.
 
 ## Environment
 
-| Var          | Values                                                           | Default              | Notes                                                                                                     |
-| ------------ | ---------------------------------------------------------------- | -------------------- | --------------------------------------------------------------------------------------------------------- |
-| `LOG_LEVEL`  | `debug` `info` `warn` `error`                                    | `info`               | Minimum log level being printed.                                                                          |
-| `LOG_FORMAT` | `text` `json`                                                    | `text`               | `text` is a human readable format (colorized if using stdout); `json` is for machines.                    |
-| `LOG_FILE`   | file path                                                        | *(empty -> stdout)*  | If set, logs go to this file only.                                                                        |
-| `LOG_TIME`   | `sec` `milli` `nano` `dt-sec` `dt-milli` `rfc3339` `rfc3339nano` | `dt-milli`           | timestamp layout; `dt-` means the date is printed. Ignored if `LOG_FORMAT` is `json` (always RFC3339Nano). |
+See `func ConfigFromEnv() (Config, error)`.
 
 Values are trimmed and lowercased. An unknown one is an error.
 `Config`'s zero value resolves to the same defaults.
@@ -59,18 +68,30 @@ func LogAttrs(ctx context.Context) []slog.Attr {
 }
 ```
 
-Attrs injected right after the message, ahead of the call site's own attrs.
+Attrs would be injected right after the message, before the call site's own attrs.
 A nil `AttrsFunc` leaves the record untouched.
 
 May be used without the rest of the package:
 
 ```go
-slog.New(logging.NewContextHandler(myHandler, requestid.LogAttrs))
+slog.New(slogenv.NewContextHandler(myHandler, requestid.LogAttrs))
 ```
 
-## Tests
+## Dev
+
+### Test
 
 ```sh
-go test ./...
-go test -race ./...         
+make audit
+go test -race ./...
+```
+
+### Release
+
+Check CI is ok.
+
+```sh
+git tag --list
+git tag -a v0.x.0 -m "v0.x.0"
+git push origin v0.x.0
 ```

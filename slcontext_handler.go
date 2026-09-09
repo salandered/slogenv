@@ -1,4 +1,4 @@
-package logging
+package slogenv
 
 import (
 	"context"
@@ -13,8 +13,6 @@ type AttrsFunc func(ctx context.Context) []slog.Attr
 // and https://github.com/golang/example/blob/master/slog-handler-guide/README.md
 //
 // Wraps next so every record carries the attrs fn reports for its ctx.
-// slog handlers ignore the ctx by default, so without this every *Context call site
-// would have to repeat those attrs.
 //
 // A nil fn returns next unchanged.
 func NewContextHandler(next slog.Handler, fn AttrsFunc) slog.Handler {
@@ -30,17 +28,11 @@ type contextHandler struct {
 }
 
 func (h contextHandler) Handle(ctx context.Context, record slog.Record) error {
-	/* TODO: delete. How it was in Apex
-	id := requestid.FromContext(ctx)
-	if id == "" { // no middleware: a background or direct call
-		return h.handler.Handle(ctx, record)
-	}
-	*/
 	attrs := h.attrs(ctx)
 	if len(attrs) == 0 { // no attrs to inject to record
 		return h.handler.Handle(ctx, record)
 	}
-	// The ctx attrs come first, right after the message, so a log is more readable.
+	// The ctx attrs come first, right after the message.
 	// A new record is needed because Record.AddAttrs can only append.
 	out := slog.NewRecord(record.Time, record.Level, record.Message, record.PC)
 	out.AddAttrs(attrs...)

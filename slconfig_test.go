@@ -1,4 +1,4 @@
-package logging
+package slogenv
 
 import (
 	"log/slog"

@@ -1,4 +1,4 @@
-package logging
+package slogenv
 
 import (
 	"bytes"
@@ -59,8 +59,8 @@ func TestNewHandlerRejectsBadConfigBeforeCreatingLogFile(t *testing.T) {
 func TestNewHandlerWritesToStdoutWhenNoFileIsSet(t *testing.T) {
 	_, closer, err := NewHandler(Config{}, nil)
 	require.NoError(t, err)
-	require.NoError(t, closer.Close()) // a no-op, must not close stdout
-	require.NoError(t, closer.Close()) // and must stay safe to repeat
+	require.NoError(t, closer.Close()) // no-op, must not close stdout
+	require.NoError(t, closer.Close()) // must stay safe to repeat
 }
 
 func TestNewHandlerAddsCtxAttrsFromAttrsFunc(t *testing.T) {
@@ -141,7 +141,7 @@ func TestContextHandlerKeepsCtxAttrsAfterWithGroup(t *testing.T) {
 
 	logger.InfoContext(withTestID(context.Background(), "req-42"), "written", "route", "/scores")
 
-	// the ctx attr joins the record, so an open group swallows it along with the rest
+	// ctx attr joins the record, so an open group swallows it along with the rest
 	entry := decodeLogLine(t, buf.String())
 	group, ok := entry["http"].(map[string]any)
 	require.True(t, ok, "entry: %v", entry)
@@ -166,8 +166,7 @@ func TestNewContextHandlerSkipsRebuildWhenAttrsFuncReturnsNothing(t *testing.T) 
 	require.Equal(t, "main", entry["board_id"])
 }
 
-// The extractor the module does not ship: the ctx key belongs to the caller.
-// Mirrors the apex's use case.
+// Mirrors request id from the ctx use case.
 
 const testIDKey = "request_id"
 
@@ -187,7 +186,7 @@ func testAttrs(ctx context.Context) []slog.Attr {
 	return []slog.Attr{slog.String(testIDKey, id)}
 }
 
-// Builds a logger from cfg without touching the default one, and closes the log file at cleanup.
+// Builds a logger from cfg, closes the log file at cleanup.
 func newLoggerForTest(t *testing.T, cfg Config, fn AttrsFunc) *slog.Logger {
 	t.Helper()
 

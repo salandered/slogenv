@@ -1,4 +1,3 @@
-// The module path is provisional: it must equal the repo URL before the first tag is pushed.
 module github.com/salandered/slogenv
 
 go 1.24

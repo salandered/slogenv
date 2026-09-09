@@ -13,6 +13,7 @@
 coverage.*
 *.coverprofile
 profile.cov
+cover
 
 # Go workspace file
 go.work
